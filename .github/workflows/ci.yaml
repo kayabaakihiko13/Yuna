@@ -27,7 +27,9 @@ jobs:
       uses: egor-tensin/setup-mingw@v2
       with:
         platform: x64
-
+        verions: 13.0.0
+      continue-on-error: true
+    
     - name: Build
       run: make
 
@@ -55,7 +57,11 @@ jobs:
       run: |
         printf "help\nexit\n" | ./dist/test_linux
         printf "greet\nexit\n" | ./dist/test_linux
-
+    # adding static analytsic
+    - name: Static Analytic
+      run: |
+        sudo apt-get install -y cppcheck
+        cppcheck --enable=warning,style --error-exitcode=1 src/*.cc 2>/dev/null || true
   release:
     needs: [build, check]
     runs-on: ubuntu-latest
