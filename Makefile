@@ -1,28 +1,21 @@
 CXX = clang++
-
-# Pastikan namanya CXXFLAGS dan gunakan -std=c++17
 CXXFLAGS = -std=c++17 -Wall -Wextra
 
-# Folder for output
-RESULT_BUILDED_DIR = dist
+DIST_DIR = dist
 
 ifeq ($(OS),Windows_NT)
-	TARGET = $(RESULT_BUILDED_DIR)/test_window.exe
+    TARGET = $(DIST_DIR)/test_window.exe
 else
-	TARGET = $(RESULT_BUILDED_DIR)/test_linux
+    TARGET = $(DIST_DIR)/test_linux
 endif
 
-# File sumber (sesuaikan folder src/)
 SRC = src/main.cc
 
 all: $(TARGET)
 
-$(TARGET): $(SRC) | $(RESULT_BUILDED_DIR)
+$(TARGET): $(SRC)
+	@mkdir -p $(DIST_DIR)
 	$(CXX) $(CXXFLAGS) $(SRC) -o $(TARGET)
-
-# make folder dist if not exits
-$(DIST_DIR):
-	mkdir -p $(DIST_DIR)
 
 clean:
 ifeq ($(OS),Windows_NT)
