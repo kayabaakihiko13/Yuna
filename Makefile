@@ -1,5 +1,5 @@
 CXX = clang++
-CXXFLAGS = -std=c++17 -Wall -Wextra
+CXXFLAGS = -std=c++17 -Wall -Wextra -I include
 
 DIST_DIR = dist
 
@@ -9,7 +9,7 @@ else
     TARGET = $(DIST_DIR)/test_linux
 endif
 
-SRC = src/main.cc
+SRC = src/main.cpp
 
 all: $(TARGET)
 
@@ -24,4 +24,9 @@ else
 	rm -rf $(DIST_DIR)
 endif
 
-.PHONY: all clean
+rebuild: clean all
+
+run: $(TARGET)
+	./$(TARGET)
+
+.PHONY: all clean rebuild run
