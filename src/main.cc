@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cctype>
 
-#include "gui.hh"
+#include "include/gui.hh"
 
 // Helper: trim whitespace
 std::string trim(const std::string &str)
