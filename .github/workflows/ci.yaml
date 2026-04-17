@@ -27,14 +27,14 @@ jobs:
       uses: egor-tensin/setup-mingw@v2
       with:
         platform: x64
-        version: 13.0.0 
+        version: 13.0.0
       continue-on-error: true
     
     - name: Build
       run: make
 
     - name: Run Tests
-      run: make test  # Jalankan test otomatis
+      run: make test
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
@@ -55,38 +55,25 @@ jobs:
     - name: Build
       run: make
 
-    - name: Run All Test
-      timeout-minutes: 2  # menambahkan timeout-minutes untuk melonggarkan aja
+    - name: Run Tests
+      timeout-minutes: 2
       run: |
-        # Test Lanczos tidak butuh input, langsung run
         ./dist/test_linux
-        # Cek exit code
         if [ $? -ne 0 ]; then
           echo "❌ Tests failed!"
           exit 1
         fi
         echo "✅ All tests passed!"
 
-    # Static analysis
     - name: Static Analysis
       run: |
         sudo apt-get install -y cppcheck
-        # Cek semua source file, bukan hanya src/*.cc
         cppcheck --enable=warning,style,performance \
                  --inline-suppr \
                  --error-exitcode=1 \
                  src/ test/ \
                  --suppress=missingIncludeSystem \
                  2>&1 | tee cppcheck.log || true
-        
-        # Upload report sebagai artifact
-        - name: Upload Analysis Report
-          uses: actions/upload-artifact@v4
-          if: always()
-          with:
-            name: cppcheck-report
-            path: cppcheck.log
-            retention-days: 7
 
   release:
     needs: [build, check]
