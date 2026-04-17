@@ -9,7 +9,7 @@ else
     TARGET = $(DIST_DIR)/test_linux
 endif
 
-SRC = src/main.cpp
+SRC = src/main.cc
 
 all: $(TARGET)
 
