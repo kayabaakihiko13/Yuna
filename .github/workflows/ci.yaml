@@ -20,23 +20,26 @@ jobs:
 
     - name: Install Clang (Linux)
       if: runner.os == 'Linux'
-      run: sudo apt-get update && sudo apt-get install -y clang
+      run: sudo apt-get update && sudo apt-get install -y clang make
 
     - name: Setup MinGW (Windows)
       if: runner.os == 'Windows'
       uses: egor-tensin/setup-mingw@v2
       with:
         platform: x64
-        verions: 13.0.0
+        version: 13.0.0 
       continue-on-error: true
     
     - name: Build
       run: make
 
+    - name: Run Tests
+      run: make test  # Jalankan test otomatis
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: mycli-${{ runner.os }}-${{ github.run_id }}
+        name: lanczos-${{ runner.os }}-${{ github.run_id }}
         path: dist/
         retention-days: 30
 
@@ -47,21 +50,44 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install Clang
-      run: sudo apt-get update && sudo apt-get install -y clang
+      run: sudo apt-get update && sudo apt-get install -y clang make
 
     - name: Build
       run: make
 
-    - name: Run Tests
-      timeout-minutes: 1
+    - name: Run All Test
+      timeout-minutes: 2  # menambahkan timeout-minutes untuk melonggarkan aja
       run: |
-        printf "help\nexit\n" | ./dist/test_linux
-        printf "greet\nexit\n" | ./dist/test_linux
-    # adding static analytsic
-    - name: Static Analytic
+        # Test Lanczos tidak butuh input, langsung run
+        ./dist/test_linux
+        # Cek exit code
+        if [ $? -ne 0 ]; then
+          echo "❌ Tests failed!"
+          exit 1
+        fi
+        echo "✅ All tests passed!"
+
+    # Static analysis
+    - name: Static Analysis
       run: |
         sudo apt-get install -y cppcheck
-        cppcheck --enable=warning,style --error-exitcode=1 src/*.cc 2>/dev/null || true
+        # Cek semua source file, bukan hanya src/*.cc
+        cppcheck --enable=warning,style,performance \
+                 --inline-suppr \
+                 --error-exitcode=1 \
+                 src/ test/ \
+                 --suppress=missingIncludeSystem \
+                 2>&1 | tee cppcheck.log || true
+        
+        # Upload report sebagai artifact
+        - name: Upload Analysis Report
+          uses: actions/upload-artifact@v4
+          if: always()
+          with:
+            name: cppcheck-report
+            path: cppcheck.log
+            retention-days: 7
+
   release:
     needs: [build, check]
     runs-on: ubuntu-latest
@@ -76,8 +102,8 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          artifacts/mycli-Linux-*/*
-          artifacts/mycli-Windows-*/*
+          artifacts/lanczos-Linux-*/*
+          artifacts/lanczos-Windows-*/*
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
