@@ -2,9 +2,16 @@
 #define GUI_HH
 
 #include <iostream>
-#include <vector>
+#include <cstdlib>
+
 inline void cmd_clear()
 {
+    // Skip clear jika di CI environment
+    if (std::getenv("CI") != nullptr)
+    {
+        return;
+    }
+
 #ifdef _WIN32
     std::system("cls");
 #else
@@ -12,16 +19,18 @@ inline void cmd_clear()
 #endif
 }
 
-void cmd_help()
+inline void cmd_help()
 {
-    std::cout << "Hello, Welcome to my CLI,Avaiable Commands\n"
-              << "Help or (h) - Show this message\n"
-              << "Exit or (x) - comamnd cli to close program\n";
+    std::cout << "Available Commands:\n"
+              << "  help/h     - Show this message\n"
+              << "  clear/cls  - Clear screen\n"
+              << "  greet      - Say hello\n"
+              << "  exit/x     - Close program\n";
 }
 
-void cmd_greet()
+inline void cmd_greet()
 {
-    std::cout << "Hello user,this is beta test";
+    std::cout << "Hello, user! This is beta test.\n";
 }
 
 #endif

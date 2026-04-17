@@ -1,18 +1,32 @@
 CXX = clang++
+CXXFLAGS = -std=c++17 -Wall -Wextra -I include
 
-# Pastikan namanya CXXFLAGS dan gunakan -std=c++17
-CXXFLAGS = -std=c++17 -Wall -Wextra
+DIST_DIR = dist
 
-# Nama file output
-TARGET = main
+ifeq ($(OS),Windows_NT)
+    TARGET = $(DIST_DIR)/test_window.exe
+else
+    TARGET = $(DIST_DIR)/test_linux
+endif
 
-# File sumber (sesuaikan folder src/)
 SRC = src/main.cc
 
 all: $(TARGET)
 
 $(TARGET): $(SRC)
-	$(CXX) $(CXXFLAGS) $(SRC) -o $(TARGET).exe
+	@mkdir -p $(DIST_DIR)
+	$(CXX) $(CXXFLAGS) $(SRC) -o $(TARGET)
 
 clean:
-	del $(TARGET).exe
+ifeq ($(OS),Windows_NT)
+	rmdir /s /q $(DIST_DIR)
+else
+	rm -rf $(DIST_DIR)
+endif
+
+rebuild: clean all
+
+run: $(TARGET)
+	./$(TARGET)
+
+.PHONY: all clean rebuild run
