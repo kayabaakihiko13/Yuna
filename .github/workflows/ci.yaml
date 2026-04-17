@@ -1,0 +1,64 @@
+name: C++ Makefile CI
+
+on:
+  push:
+    branches: [ main]
+  pull_request:
+    branches: [ main]
+
+jobs:
+  # BUILD: Linux + Windows
+  build:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install Clang (Ubuntu)
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && sudo apt-get install -y clang
+
+    - name: Setup MinGW + Clang (Windows)
+      if: runner.os == 'Windows'
+      uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x64
+        version: 13.0.0
+
+    - name: Build
+      run: make
+
+    - name: Upload Binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: mycli-${{ runner.os }}
+        path: dist/
+  # check: Debian Only
+  check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install Clang
+      run: sudo apt-get update && sudo apt-get install -y clang
+
+    - name: Build
+      run: make
+
+    - name: Run Tests
+      run: |
+        echo "Running CLI tests..."
+        echo "exit" | ./dist/test_linux
+        echo "help" | ./dist/test_linux
+
+    - name: Static Analysis
+      run: |
+        sudo apt-get install -y cppcheck
+        cppcheck --enable=all --error-exitcode=1 src/*.cc
