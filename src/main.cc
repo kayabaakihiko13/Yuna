@@ -45,35 +45,7 @@ int main()
 
         std::vector<std::string> args;
         std::string arg;
-        while (iss >> arg)
-        {
-            args.push_back(arg);
         }
-
-        // Route commands
-        if (cmd == "help" || cmd == "h")
-        {
-            cmd_help();
-        }
-        else if (cmd == "clear" || cmd == "cls")
-        {
-            cmd_clear();
-        }
-        else if (cmd == "greet")
-        {
-            cmd_greet();
-        }
-        else if (cmd == "exit" || cmd == "x" || cmd == "quit")
-        {
-            std::cout << "Goodbye!\n";
-            running = false;
-        }
-        else
-        {
-            std::cerr << "Unknown command: " << cmd << "\n";
-            std::cerr << "Type 'help' for available commands.\n";
-        }
-    }
 
     return 0;
 }
