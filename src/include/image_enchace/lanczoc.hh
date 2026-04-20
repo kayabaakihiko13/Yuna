@@ -1,10 +1,13 @@
 #ifndef __LANCZOC_HH
 #define __LANCZOC_HH
 
-#include "utils/constants.hh"
-#include "utils/utils.hh"
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <algorithm>
+
+#include "utils/constants.hh"
+#include "utils/utils.hh"
+
 // implement kernel lanczoc
 float lanczos(float x, int a)
 {
@@ -19,63 +22,56 @@ int clamp(int val, int min_val, int max_val)
     return std::max(min_val, std::min(max_val, val));
 }
 
-/**
- * Resampling Logic with lanczoc algoritm
- *
- */
+// Di lanczoc.hh, tambahkan:
+#include <functional>
+using ProgressCallback = std::function<void(int, int)>;
 
-Image resizeLanczos(const Image &src, float scale_factor)
+Image resizeLanczos(const Image &src, float scale_factor, ProgressCallback cb = nullptr)
 {
     int dst_width = static_cast<int>(std::round(src.width * scale_factor));
     int dst_height = static_cast<int>(std::round(src.height * scale_factor));
-    // initila varible for result image
+
     Image dst;
     dst.width = dst_width;
     dst.height = dst_height;
-    // resize image
     dst.data.resize(dst_width * dst_height);
 
-    // pre-calculate ratios for coordinate mapping
     float x_ratio = static_cast<float>(src.width) / dst_width;
     float y_ratio = static_cast<float>(src.height) / dst_height;
 
-    // this secction how to calculate every pixel in the destination image(upscale) image.
+    int total = dst_width * dst_height;
+    int processed = 0;
+
     for (int y = 0; y < dst_height; ++y)
     {
         for (int x = 0; x < dst_width; ++x)
         {
-            // intial destination map pixil in center to source coordinate space
             float src_x = (x + 0.5) * x_ratio - 0.5;
             float src_y = (y + 0.5) * y_ratio - 0.5;
 
-            // intial value of red,green and blue accumulator
             float r_val = 0.0f, g_val = 0.0f, b_val = 0.0f;
-            float weight_sum = 0.0; // intial bobot
-            // iterasi perhitungan neighborhood untuk titik
+            float weight_sum = 0.0;
+
             int x_start = static_cast<int>(std::floor(src_x)) - LANCZOS_RADIUS + 1;
             int x_end = static_cast<int>(std::ceil(src_x)) + LANCZOS_RADIUS;
             int y_start = static_cast<int>(std::floor(src_y)) - LANCZOS_RADIUS + 1;
             int y_end = static_cast<int>(std::ceil(src_y)) + LANCZOS_RADIUS;
 
-            // iterasi over pola untuk neighborhood
             for (int ky = y_start; ky <= y_end; ++ky)
             {
                 for (int kx = x_start; kx <= x_end; ++kx)
                 {
-                    // Calculate Lanczos weights (separable kernel)
                     float wx = lanczos(static_cast<float>(kx) - src_x, LANCZOS_RADIUS);
                     float wy = lanczos(static_cast<float>(ky) - src_y, LANCZOS_RADIUS);
                     float weight = wx * wy;
 
                     if (weight > 0.0f)
                     {
-                        // Clamp to image bounds (edge handling)
                         int cx = clamp(kx, 0, src.width - 1);
                         int cy = clamp(ky, 0, src.height - 1);
 
                         const Pixel &p = src.at(cx, cy);
 
-                        // Accumulate weighted RGB values
                         r_val += static_cast<float>(p.r) * weight;
                         g_val += static_cast<float>(p.g) * weight;
                         b_val += static_cast<float>(p.b) * weight;
@@ -84,7 +80,6 @@ Image resizeLanczos(const Image &src, float scale_factor)
                 }
             }
 
-            // memperhitungkan normalisasi dan penulisan final untuk pixel
             if (weight_sum > 0.0f)
             {
                 float inv_sum = 1.0f / weight_sum;
@@ -95,6 +90,11 @@ Image resizeLanczos(const Image &src, float scale_factor)
             else
             {
                 dst.at(x, y) = {0, 0, 0};
+            }
+            processed++;
+            if (cb && processed % (total / 100 + 1) == 0)
+            {
+                cb(processed, total);
             }
         }
     }
