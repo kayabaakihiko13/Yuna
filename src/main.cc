@@ -3,10 +3,11 @@
 #include <chrono>
 #include <vector>
 #include <cmath>
-#include <cctype>
+#include <functional> // ← Untuk std::function
 
 // STB Image
 #define STB_IMAGE_IMPLEMENTATION
+#pragma GCC diagno
 #include "include/utils/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "include/utils/stb_image_write.h"
@@ -14,199 +15,161 @@
 // Local headers
 #include "image_enchace/lanczoc.hh"
 #include "utils/constants.hh"
-#include "utils/utils.hh"
+#include "utils/interactive.hh"
+#include "utils/format_file_image.hh"
+#include "gui/cli.hh"
 
-void print_usage(const char *prog_name)
+// using Progress callback type
+using ProgressCallback = std::function<void(int, int)>;
+
+bool process_image()
 {
-    std::cout << "\n🚀 Lanczos Upscaler\n"
-              << "Usage: " << prog_name << " [options]\n\n"
-              << "Options:\n"
-              << "  -i, --input <path>     Input image path (required)\n"
-              << "  -o, --output <path>    Output image path [default: output_lanczos.png]\n"
-              << "  -s, --scale <value>    Scale: 2.0, 4.0, 8.0 [default: 4.0]\n"
-              << "  -v, --verbose          Enable verbose output\n"
-              << "  -h, --help             Show this help\n\n"
-              << "Or positional: " << prog_name << " <input> [scale] [output]\n\n"
-              << "Examples:\n"
-              << "  " << prog_name << " -i input.jpg -o out.png -s 4.0 -v\n"
-              << "  " << prog_name << " input.jpg 4.0 output.png\n\n";
-}
-
-bool is_valid_scale(float s)
-{
-    const float scales[] = {2.0f, 4.0f, 8.0f};
-    for (float valid : scales)
+    // intial prompt gui
+    cli::Args args = cli::prompt();
+    if (!args.is_valid)
     {
-        if (std::abs(s - valid) < 0.001f)
-            return true;
+        return false;
     }
-    return false;
-}
-
-int main(int argc, char *argv[])
-{
-    // === Default Parameters ===
-    std::string input_path = "../docs/images/65056cf873ff6c1ac9240af3bfe4d8c6.jpg";
-    std::string output_path = "output_lanczos.png";
-    float scale_factor = 4.0f;
-    bool verbose = false;
-
-    // === Parse CLI (Flags + Positional) ===
-    for (int i = 1; i < argc; ++i)
+    // detect and validation user input format
+    format_processing::ImageFormat input_fmt = format_processing::detect_format(args.input_path);
+    if (input_fmt == format_processing::ImageFormat::UNKNOWN)
     {
-        std::string arg = argv[i];
-
-        if (arg == "-h" || arg == "--help")
-        {
-            print_usage(argv[0]);
-            return 0;
-        }
-        else if (arg == "-v" || arg == "--verbose")
-        {
-            verbose = true;
-        }
-        else if ((arg == "-i" || arg == "--input") && i + 1 < argc)
-        {
-            input_path = argv[++i];
-        }
-        else if ((arg == "-o" || arg == "--output") && i + 1 < argc)
-        {
-            output_path = argv[++i];
-        }
-        else if ((arg == "-s" || arg == "--scale") && i + 1 < argc)
-        {
-            try
-            {
-                scale_factor = std::stof(argv[++i]);
-                if (!is_valid_scale(scale_factor))
-                {
-                    std::cerr << "Error: Scale harus 2.0, 4.0, atau 8.0\n";
-                    print_usage(argv[0]);
-                    return 1;
-                }
-            }
-            catch (...)
-            {
-                std::cerr << "Error: Scale harus angka\n";
-                return 1;
-            }
-        }
-        else if (arg.find('-') != 0)
-        {
-            // Positional fallback
-            if (input_path == "../docs/images/65056cf873ff6c1ac9240af3bfe4d8c6.jpg")
-            {
-                input_path = arg;
-            }
-            else if (output_path == "output_lanczos.png")
-            {
-                output_path = arg;
-            }
-        }
+        interactive::log_warn("Format input tidak dikenali, mencoba load sebagai gambar...");
     }
-
-    // === Validate ===
-    if (input_path.empty())
+    format_processing::ImageFormat output_fmt = format_processing::detect_format(args.output_path);
+    if (output_fmt == format_processing::ImageFormat::UNKNOWN)
     {
-        std::cerr << "❌ Error: Input path is required\n";
-        print_usage(argv[0]);
-        return 1;
+        // Default ke PNG jika ekstensi tidak jelas
+        interactive::log_warn("Ekstensi output tidak dikenali, menggunakan .png");
+        args.output_path = format_processing::ensure_extension(args.output_path, format_processing::ImageFormat::PNG);
+        output_fmt = format_processing::ImageFormat::PNG;
     }
-
-    // === Info Output ===
-    std::cout << "Lanczos Upscale\n";
-    std::cout << "==================\n";
-    std::cout << "Input : " << input_path << "\n";
-    std::cout << "Scale : " << scale_factor << "x\n";
-    std::cout << "Output: " << output_path << "\n";
-    if (verbose)
-        std::cout << "Mode  : Verbose\n";
-    std::cout << "\n";
-    std::cout.flush();
-
-    // === 1. LOAD GAMBAR ===
-    int width = 0, height = 0, channels = 0;
-
-    std::string safe_path = input_path;
-    for (char &c : safe_path)
+    // show up info conversion
+    format_processing::print_conversion_info(args.input_path, args.output_path);
+    // intial load image
+    int w = 0, h = 0, ch = 0;
+    std::string path = args.input_path;
+    for (char &c : path)
         if (c == '\\')
             c = '/';
-
-    unsigned char *image_data = stbi_load(safe_path.c_str(), &width, &height, &channels, 3);
-
-    if (!image_data)
+    unsigned char *data = stbi_load(path.c_str(), &w, &h, &ch, 3);
+    if (!data)
     {
-        std::cerr << "Error: Gagal Load Gambar: " << input_path << "\n";
-        std::cerr << "Detail: " << (stbi_failure_reason() ? stbi_failure_reason() : "Unknown") << "\n";
-        std::cerr.flush();
-        return 1;
+        interactive::log_error("Gagal Load:" + args.input_path);
+        std::cerr << "Datail:" << (stbi_failure_reason() ? stbi_failure_reason() : "Unknown") << "\n";
+        return false;
     }
+    interactive::log_success("Loaded: " + std::to_string(w) + "x" + std::to_string(h) + " px");
 
-    std::cout << "Loaded: " << width << "x" << height << " px\n";
-
-    // === 2. Conversion to struct Image ===
-    Image src;
-    src.width = width;
-    src.height = height;
-    src.data.resize(width * height);
-
-    for (int i = 0; i < width * height; ++i)
+    // convert raw data to Image Struct
+    Image src{w, h, {}};
+    src.data.resize(w * h);
+    for (int i = 0; i < w * h; ++i)
     {
-        src.data[i] = {
-            image_data[i * 3],
-            image_data[i * 3 + 1],
-            image_data[i * 3 + 2]};
+        src.data[i] = {data[i * 3], data[i * 3 + 1], data[i * 3 + 2]};
     }
-    stbi_image_free(image_data);
+    // free memory variabel on src
+    stbi_image_free(data);
+    if (args.verbose)
+    {
+        std::cout << interactive::BOLD << "Source" << interactive::RESET << "\n";
+        std::cout << "    " << src.width << "*" << src.height << "px\n"
+                  << std::endl;
+    }
+    // processing image
+    interactive::log_info("Processing Lanzoos Upscale ...");
+    auto t1 = std::chrono::high_resolution_clock::now();
+    Image result = resizeLanczos(src, args.scale_factor,
+                                 [verbose = args.verbose](int done, int total)
+                                 {
+                                     if (verbose)
+                                         interactive::show_progress(done, total, "Resampling");
+                                 });
 
-    // === 3. Processing Resize Lanczos ===
-    if (verbose)
-        std::cout << "Processing Lanczos ReSampling...\n";
-    std::cout.flush();
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    interactive::log_success("Done: " + std::to_string(result.width) + "x" + std::to_string(result.height) + " px");
+    std::cout << "⏱️  Time: " << ms << " ms\n\n";
 
-    auto start = std::chrono::high_resolution_clock::now();
-    Image result = resizeLanczos(src, scale_factor);
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-    std::cout << "Done! Result: " << result.width << "x" << result.height << " px\n";
-    std::cout << "Time: " << duration.count() << " ms\n\n";
-
-    // === 4. Conversion result to array ===
-    std::vector<unsigned char> saving_array(result.width * result.height * 3);
+    // saving and print output
+    std::vector<unsigned char> out(result.width * result.height * 3);
     for (int i = 0; i < result.width * result.height; ++i)
     {
-        saving_array[i * 3] = result.data[i].r;
-        saving_array[i * 3 + 1] = result.data[i].g;
-        saving_array[i * 3 + 2] = result.data[i].b;
+        out[i * 3] = result.data[i].r;
+        out[i * 3 + 1] = result.data[i].g;
+        out[i * 3 + 2] = result.data[i].b;
     }
-
-    // === 5. Save Image ===
-    bool save_success = false;
-    std::string lower_output = output_path;
-    for (char &c : lower_output)
-        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-
-    if (lower_output.find(".png") != std::string::npos)
+    std::string out_lower = args.output_path;
+    for (char &c : out_lower)
+        c = std::tolower(static_cast<unsigned char>(c));
+    bool ok = false;
+    switch (output_fmt)
     {
-        save_success = stbi_write_png(output_path.c_str(), result.width, result.height, 3,
-                                      saving_array.data(), result.width * 3);
+    case format_processing::ImageFormat::PNG:
+        ok = stbi_write_png(args.output_path.c_str(), result.width, result.height, 3,
+                            out.data(), result.width * 3);
+        break;
+    case format_processing::ImageFormat::JPG:
+        ok = stbi_write_jpg(args.output_path.c_str(), result.width, result.height, 3,
+                            out.data(), 90); // Quality 90
+        break;
+    case format_processing::ImageFormat::BMP:
+        ok = stbi_write_bmp(args.output_path.c_str(), result.width, result.height, 3,
+                            out.data());
+        break;
+    default:
+        // Fallback ke PNG
+        interactive::log_warn("Format tidak didukung, fallback ke PNG");
+        ok = stbi_write_png(args.output_path.c_str(), result.width, result.height, 3,
+                            out.data(), result.width * 3);
     }
-    else
+
+    if (!ok)
     {
-        save_success = stbi_write_jpg(output_path.c_str(), result.width, result.height, 3,
-                                      saving_array.data(), 90);
+        interactive::log_error("Gagal save: " + args.output_path);
+        return false;
     }
+    interactive::log_success("Saved: " + args.output_path + " [" + format_processing::to_string(output_fmt) + "]");
+    std::cout << interactive::GREEN << "Success!" << interactive::RESET << "\n";
+    return true;
+    //
+}
 
-    if (!save_success)
+// in this code
+int main()
+{
+    std::cout << interactive::CYAN << interactive::BOLD
+              << "\n Welcome to Lanczos Upscaler!"
+              << interactive::RESET << std::endl
+              << std::endl;
+    while (true)
     {
-        std::cerr << "ERROR: Gagal save ke '" << output_path << "'\n";
-        std::cerr.flush();
-        return 1;
+        bool success = process_image();
+
+        if (!success)
+        {
+            std::cout << interactive::YELLOW << "\nProcess failed or cancelled."
+                      << interactive::RESET << "\n";
+        }
+
+        // section for break app or continue using
+        std::cout << "\n"
+                  << interactive::BLUE << "*" << interactive::RESET
+                  << " Process another image? [Y/n]: ";
+        std::string confirm;
+        std::getline(std::cin, confirm);
+
+        // Jika user ketik 'n' atau 'no', exit loop
+        if (confirm == "n" || confirm == "N" || confirm == "no" || confirm == "No")
+        {
+            std::cout << interactive::GREEN << "\n Thank you! Goodbye."
+                      << interactive::RESET << "\n";
+            break;
+        }
+
+        // Jika 'y' atau kosong, lanjut loop
+        std::cout << "\n"
+                  << std::string(50, '-') << "\n\n";
     }
-
-    std::cout << "Output Saved on: " << output_path << "\n";
-    std::cout << "Success!\n";
-
     return 0;
 }

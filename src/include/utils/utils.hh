@@ -27,11 +27,6 @@ struct Image
     }
 };
 
-/*
- * Math helper
- */
-
-// this for Sinc function algorihm
 float sinc(float x)
 {
     if (x == 0.0)
