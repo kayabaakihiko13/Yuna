@@ -7,7 +7,6 @@
 
 // STB Image
 #define STB_IMAGE_IMPLEMENTATION
-#pragma GCC diagno
 #include "include/utils/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "include/utils/stb_image_write.h"
