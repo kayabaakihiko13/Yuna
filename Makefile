@@ -15,20 +15,19 @@ MAIN_SRC := src/main.cc
 TEST_SRC := test/main_tests.cc
 
 # Platform-specific settings
+# Platform-specific settings
 ifeq ($(OS),Windows_NT)
-    # Windows settings
     TARGET := $(APP_DIR)/main.exe
     TEST_TARGET := $(TEST_DIR)/test_window.exe
     RUN_CMD := 
-    MKDIR_APP_CMD := if not exist $(subst /,\,$(APP_DIR)) mkdir $(subst /,\,$(APP_DIR))
-    MKDIR_TEST_CMD := if not exist $(subst /,\,$(TEST_DIR)) mkdir $(subst /,\,$(TEST_DIR))
-    RM_ALL_CMD := if exist $(subst /,\,$(DIST_DIR)) rmdir /s /q $(subst /,\,$(DIST_DIR))
-    RM_TEST_CMD := if exist $(subst /,\,$(TEST_DIR)) rmdir /s /q $(subst /,\,$(TEST_DIR))
-    # Perintah untuk mematikan proses jika masih berjalan (mencegah LNK1104)
+    # Gunakan sintaks yang aman untuk shell Windows
+    MKDIR_APP_CMD := if not exist "$(APP_DIR)" mkdir "$(subst /,\,$(APP_DIR))"
+    MKDIR_TEST_CMD := if not exist "$(TEST_DIR)" mkdir "$(subst /,\,$(TEST_DIR))"
+    RM_ALL_CMD := if exist "$(DIST_DIR)" rmdir /s /q "$(subst /,\,$(DIST_DIR))"
+    RM_TEST_CMD := if exist "$(TEST_DIR)" rmdir /s /q "$(subst /,\,$(TEST_DIR))"
     KILL_CMD := taskkill /F /IM main.exe /T >nul 2>&1 || (exit 0)
     KILL_TEST_CMD := taskkill /F /IM test_window.exe /T >nul 2>&1 || (exit 0)
 else
-    # Linux/macOS settings
     TARGET := $(APP_DIR)/main
     TEST_TARGET := $(TEST_DIR)/test_linux
     RUN_CMD := ./
@@ -38,8 +37,8 @@ else
     RM_TEST_CMD := rm -rf $(TEST_DIR)
     KILL_CMD := pkill -f $(TARGET) || true
     KILL_TEST_CMD := pkill -f $(TEST_TARGET) || true
-    SHELL := /bin/bash
 endif
+
 
 .PHONY: all clean rebuild run test help dist clean-test
 
