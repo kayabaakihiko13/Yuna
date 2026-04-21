@@ -6,6 +6,10 @@
 #include <functional> // ← Untuk std::function
 
 // STB Image
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
 #define STB_IMAGE_IMPLEMENTATION
 #include "include/utils/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION

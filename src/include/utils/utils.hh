@@ -3,7 +3,10 @@
 #include "constants.hh"
 #include <vector>
 #include <filesystem>
-#include <cmath>
+#define _USE_MATH_DEFINES
+#include <numbers>
+
+#include "utils/constants.hh"
 // utilities for define image and Pixel data type
 
 struct Pixel
