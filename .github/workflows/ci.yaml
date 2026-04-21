@@ -12,6 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        # Gunakan windows-latest atau windows-2022
         os: [ubuntu-latest, windows-2022]
     
     steps:
@@ -34,9 +35,12 @@ jobs:
                  --suppress=missingIncludeSystem
 
     - name: Build & Test
+      # Menggunakan bash secara eksplisit di semua OS agar sintaksnya konsisten
       shell: bash
       run: |
-        make clean
+        # Gunakan '-' di depan make clean agar jika folder dist belum ada, 
+        # workflow tidak langsung mati (error-ignored).
+        make clean || true
         make
         make test
 
@@ -60,14 +64,14 @@ jobs:
         path: artifacts
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2 # Update ke v2 yang lebih stabil
       with:
-        # Mengambil semua file di dalam folder artifacts secara rekursif
+        # Menggunakan pola globbing yang lebih aman
         files: |
-          artifacts/**/*.exe
-          artifacts/**/main
-          artifacts/**/test_linux
-          artifacts/**/test_window.exe
+          artifacts/lanczos-Windows/**/*.exe
+          artifacts/lanczos-Linux/**/main
+          artifacts/lanczos-Linux/**/test_linux
+          artifacts/lanczos-Windows/**/test_window.exe
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
