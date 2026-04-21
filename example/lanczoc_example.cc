@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 {
     // === Default Parameters ===
     std::string input_path = "../docs/images/65056cf873ff6c1ac9240af3bfe4d8c6.jpg";
-    std::string output_path = "output_lanczos.png";
+    std::string output_path = "../docs/images/output_lanczos.jpg";
     float scale_factor = 4.0f; // upscale 2x
 
     // === Parse CLI Arguments ===
