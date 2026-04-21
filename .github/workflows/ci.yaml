@@ -53,7 +53,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y clang make
 
     - name: Build
-      run: make
+      run: make test
 
     - name: Run Tests
       timeout-minutes: 2
