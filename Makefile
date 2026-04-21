@@ -1,105 +1,79 @@
 CXX := clang++
 CXXFLAGS := -std=c++17 -Wall -Wextra -Wpedantic -O2
 LDFLAGS :=
-
-# Include directories
 INCLUDES := -I src/include -I test/include
 
-# Output directory
 DIST_DIR := dist
 APP_DIR := $(DIST_DIR)/app
 TEST_DIR := $(DIST_DIR)/test
 
-# Source files
 MAIN_SRC := src/main.cc
 TEST_SRC := test/main_tests.cc
 
+# DETEKSI OS
 ifeq ($(OS),Windows_NT)
-    PLATFORM := windows
-else
-    PLATFORM := linux
-endif
-
-# Platform-specific settings
-ifeq ($(PLATFORM),windows)
     TARGET := $(APP_DIR)/main.exe
     TEST_TARGET := $(TEST_DIR)/test_window.exe
     RUN_CMD := 
-    # Bungkus semua perintah Windows pakai tanda kutip satu biar gak diparse Linux
-    MKDIR_APP_CMD := if not exist "$(APP_DIR)" mkdir "$(subst /,\,$(APP_DIR))"
-    MKDIR_TEST_CMD := if not exist "$(TEST_DIR)" mkdir "$(subst /,\,$(TEST_DIR))"
-    RM_ALL_CMD := if exist "$(DIST_DIR)" rmdir /s /q "$(subst /,\,$(DIST_DIR))"
-    RM_TEST_CMD := if exist "$(TEST_DIR)" rmdir /s /q "$(subst /,\,$(TEST_DIR))"
+    # Pakai shell bawaan Windows yang simpel
+    MKDIR_CMD := if not exist
+    RM_CMD := if exist
+    RM_OPTS := /s /q
     KILL_CMD := taskkill /F /IM main.exe /T >nul 2>&1 || exit 0
 else
     TARGET := $(APP_DIR)/main
     TEST_TARGET := $(TEST_DIR)/test_linux
     RUN_CMD := ./
-    MKDIR_APP_CMD := mkdir -p "$(APP_DIR)"
-    MKDIR_TEST_CMD := mkdir -p "$(TEST_DIR)"
-    RM_ALL_CMD := rm -rf "$(DIST_DIR)"
-    RM_TEST_CMD := rm -rf "$(TEST_DIR)"
-    KILL_CMD := pkill -f "$(TARGET)" || true
+    MKDIR_CMD := mkdir -p
+    RM_CMD := rm -rf
+    RM_OPTS := 
+    KILL_CMD := pkill -f main || true
 endif
 
+.PHONY: all clean rebuild run test help dist
 
-
-.PHONY: all clean rebuild run test help dist clean-test
-
-# Default target
 all: $(TARGET)
 
-# Rule untuk membuat direktori
+# Rule Buat Folder (Handle Windows vs Linux manual)
 $(APP_DIR):
-	@$(MKDIR_APP_CMD)
+ifeq ($(OS),Windows_NT)
+	@if not exist "$(DIST_DIR)" mkdir "$(DIST_DIR)"
+	@if not exist "$(APP_DIR)" mkdir "$(subst /,\,$(APP_DIR))"
+else
+	@mkdir -p $(APP_DIR)
+endif
 
 $(TEST_DIR):
-	@$(MKDIR_TEST_CMD)
+ifeq ($(OS),Windows_NT)
+	@if not exist "$(DIST_DIR)" mkdir "$(DIST_DIR)"
+	@if not exist "$(TEST_DIR)" mkdir "$(subst /,\,$(TEST_DIR))"
+else
+	@mkdir -p $(TEST_DIR)
+endif
 
-# Helper untuk memicu pembuatan folder
-dist: $(APP_DIR) $(TEST_DIR)
-
-# Build main program
+# Build Program Utama
 $(TARGET): $(MAIN_SRC) | $(APP_DIR)
-	@echo "Checking for running instances..."
 	-@$(KILL_CMD)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $(MAIN_SRC) $(LDFLAGS) -o $(TARGET)
 	@echo "App build complete: $(TARGET)"
 
-# Build test program
+# Build Test
 $(TEST_TARGET): $(TEST_SRC) | $(TEST_DIR)
-	@echo "Checking for running test instances..."
-	-@$(KILL_TEST_CMD)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $(TEST_SRC) $(LDFLAGS) -o $(TEST_TARGET)
 	@echo "Test build complete: $(TEST_TARGET)"
 
-# Clean build artifacts
 clean:
-	-@$(RM_ALL_CMD)
+ifeq ($(OS),Windows_NT)
+	@if exist "$(DIST_DIR)" rmdir /s /q "$(DIST_DIR)"
+else
+	@rm -rf $(DIST_DIR)
+endif
 	@echo "Clean complete."
 
-clean-test:
-	-@$(RM_TEST_CMD)
-	@echo "Test Clean Complete"
-
-# Run main program
 run: $(TARGET)
-	@echo "Running app..."
 	@$(RUN_CMD)$(TARGET)
 
-# Build and run tests
 test: $(TEST_TARGET)
-	@echo "Running tests..."
 	@$(RUN_CMD)$(TEST_TARGET)
 
 rebuild: clean all
-
-# Help message
-help:
-	@echo "Available targets:"
-	@echo "  all        - Build main program (default)"
-	@echo "  run        - Build and run main program"
-	@echo "  test       - Build and run tests"
-	@echo "  clean      - Remove all build artifacts"
-	@echo "  clean-test - Remove only test artifacts"
-	@echo "  rebuild    - Clean + rebuild all"

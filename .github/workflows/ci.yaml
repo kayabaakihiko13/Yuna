@@ -8,68 +8,61 @@ on:
     branches: [main, development]
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        # Gunakan windows-latest atau windows-2022
-        os: [ubuntu-latest, windows-latest]
-    
+  build-linux:
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Install Deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang make cppcheck dos2unix
+          dos2unix Makefile
+      - name: Static Analysis
+        run: cppcheck --enable=warning,style,performance --inline-suppr --error-exitcode=1 src/
+      - name: Build & Test
+        run: |
+          make clean
+          make
+          make test
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lanczos-linux
+          path: dist/
 
-    - name: Install Dependencies (Linux)
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y clang make dos2unix
-        # Paksa ubah Makefile ke format Linux agar tidak error 'unexpected end of file'
-        dos2unix Makefile 
-
-    - name: Static Analysis (Linux Only)
-      if: runner.os == 'Linux'
-      run: |
-        cppcheck --enable=warning,style,performance \
-                 --inline-suppr \
-                 --error-exitcode=1 \
-                 src/ test/ \
-                 --suppress=missingIncludeSystem
-
-    - name: Build
-      # Menggunakan bash secara eksplisit di semua OS agar sintaksnya konsisten
-      run: |
-        make clean || true
-        make
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: lanczos-${{ runner.os }}
-        path: dist/
-        retention-days: 7
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build & Test
+        shell: cmd
+        run: |
+          make clean
+          make
+          make test
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lanczos-windows
+          path: dist/
 
   release:
-    needs: [build]
+    needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     steps:
-    - name: Download Artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v2 # Update ke v2 yang lebih stabil
-      with:
-        # Menggunakan pola globbing yang lebih aman
-        files: |
-          artifacts/lanczos-Windows/**/*.exe
-          artifacts/lanczos-Linux/**/main
-          artifacts/lanczos-Linux/**/test_linux
-          artifacts/lanczos-Windows/**/test_window.exe
-        generate_release_notes: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/lanczos-windows/**/*.exe
+            artifacts/lanczos-linux/**/main
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
