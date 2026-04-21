@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         # Gunakan windows-latest atau windows-2022
-        os: [ubuntu-latest, windows-2022]
+        os: [ubuntu-latest, windows-latest]
     
     steps:
     - name: Checkout
