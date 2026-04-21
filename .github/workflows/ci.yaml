@@ -38,10 +38,17 @@ jobs:
       # Menggunakan bash secara eksplisit di semua OS agar sintaksnya konsisten
       shell: bash
       run: |
-        # Gunakan '-' di depan make clean agar jika folder dist belum ada, 
-        # workflow tidak langsung mati (error-ignored).
-        make clean || true
+        # 1. Paksa ubah format Makefile dari CRLF ke LF langsung di runner
+        sed -i 's/\r$//' Makefile
+        
+        # 2. Jalankan make secara manual per target untuk menghindari error di clean
+        # Kita pakai '|| true' supaya jika gagal tidak langsung mematikan workflow
+        make clean || echo "Clean skipped"
+        
+        # 3. Jalankan build utama
         make
+        
+        # 4. Jalankan test
         make test
 
     - name: Upload Artifact
