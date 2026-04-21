@@ -38,9 +38,8 @@ jobs:
 
     - name: Build
       # Menggunakan bash secara eksplisit di semua OS agar sintaksnya konsisten
-      shell: bash
       run: |
-        make clean
+        make clean || true
         make
 
     - name: Upload Artifact
