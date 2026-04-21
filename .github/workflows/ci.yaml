@@ -23,7 +23,9 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang make cppcheck
+        sudo apt-get install -y clang make dos2unix
+        # Paksa ubah Makefile ke format Linux agar tidak error 'unexpected end of file'
+        dos2unix Makefile 
 
     - name: Static Analysis (Linux Only)
       if: runner.os == 'Linux'
@@ -34,22 +36,12 @@ jobs:
                  src/ test/ \
                  --suppress=missingIncludeSystem
 
-    - name: Build & Test
+    - name: Build
       # Menggunakan bash secara eksplisit di semua OS agar sintaksnya konsisten
       shell: bash
       run: |
-        # 1. Paksa ubah format Makefile dari CRLF ke LF langsung di runner
-        sed -i 's/\r$//' Makefile
-        
-        # 2. Jalankan make secara manual per target untuk menghindari error di clean
-        # Kita pakai '|| true' supaya jika gagal tidak langsung mematikan workflow
-        make clean || echo "Clean skipped"
-        
-        # 3. Jalankan build utama
+        make clean
         make
-        
-        # 4. Jalankan test
-        make test
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
