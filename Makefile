@@ -14,30 +14,34 @@ TEST_DIR := $(DIST_DIR)/test
 MAIN_SRC := src/main.cc
 TEST_SRC := test/main_tests.cc
 
-# Platform-specific settings
-# Platform-specific settings
 ifeq ($(OS),Windows_NT)
+    PLATFORM := windows
+else
+    PLATFORM := linux
+endif
+
+# Platform-specific settings
+ifeq ($(PLATFORM),windows)
     TARGET := $(APP_DIR)/main.exe
     TEST_TARGET := $(TEST_DIR)/test_window.exe
     RUN_CMD := 
-    # Gunakan sintaks yang aman untuk shell Windows
+    # Bungkus semua perintah Windows pakai tanda kutip satu biar gak diparse Linux
     MKDIR_APP_CMD := if not exist "$(APP_DIR)" mkdir "$(subst /,\,$(APP_DIR))"
     MKDIR_TEST_CMD := if not exist "$(TEST_DIR)" mkdir "$(subst /,\,$(TEST_DIR))"
     RM_ALL_CMD := if exist "$(DIST_DIR)" rmdir /s /q "$(subst /,\,$(DIST_DIR))"
     RM_TEST_CMD := if exist "$(TEST_DIR)" rmdir /s /q "$(subst /,\,$(TEST_DIR))"
-    KILL_CMD := taskkill /F /IM main.exe /T >nul 2>&1 || (exit 0)
-    KILL_TEST_CMD := taskkill /F /IM test_window.exe /T >nul 2>&1 || (exit 0)
+    KILL_CMD := taskkill /F /IM main.exe /T >nul 2>&1 || exit 0
 else
     TARGET := $(APP_DIR)/main
     TEST_TARGET := $(TEST_DIR)/test_linux
     RUN_CMD := ./
-    MKDIR_APP_CMD := mkdir -p $(APP_DIR)
-    MKDIR_TEST_CMD := mkdir -p $(TEST_DIR)
-    RM_ALL_CMD := rm -rf $(DIST_DIR)
-    RM_TEST_CMD := rm -rf $(TEST_DIR)
-    KILL_CMD := pkill -f $(TARGET) || true
-    KILL_TEST_CMD := pkill -f $(TEST_TARGET) || true
+    MKDIR_APP_CMD := mkdir -p "$(APP_DIR)"
+    MKDIR_TEST_CMD := mkdir -p "$(TEST_DIR)"
+    RM_ALL_CMD := rm -rf "$(DIST_DIR)"
+    RM_TEST_CMD := rm -rf "$(TEST_DIR)"
+    KILL_CMD := pkill -f "$(TARGET)" || true
 endif
+
 
 
 .PHONY: all clean rebuild run test help dist clean-test
