@@ -9,7 +9,7 @@
 #include <cmath>
 #include "utils/constants.hh"
 #include "utils/interactive.hh"
-
+#include "utils/format_file_image.hh"
 namespace cli
 {
     struct Args
@@ -19,6 +19,7 @@ namespace cli
         bool is_valid = false;
         std::string input_path;
         std::string output_path = "output_lanczos.png";
+        format_processing::ImageFormat format_ext = format_processing::ImageFormat::PNG; //default png
     };
 
     inline bool is_valid_scale(float scale)
@@ -104,15 +105,32 @@ namespace cli
                 interactive::log_warn("Input tidak valid. Masukkan angka (2/4/8).");
             }
         }
+        // 3. output format
+        std::cout << "\n"
+          << interactive::BLUE << interactive::RESET
+          << " Output format (png/jpg/bmp) [default: png]: ";
+        std::getline(std::cin, input);
+        for (char &c : input) {
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        }
 
-        // ── 3. Output Path ──
+        if(input == "jpg" || input =="jpeg"){
+            args.format_ext = format_processing::ImageFormat::JPG;
+        }else if(input == "bmp"){
+            args.format_ext = format_processing::ImageFormat::BMP;
+        }else{
+            args.format_ext = format_processing::ImageFormat::PNG;
+        }
+        args.output_path = format_processing::ensure_extension(args.output_path,args.format_ext);
+        // ── 4. Output Path ──
         std::cout << "\n"
                   << interactive::BLUE << "💾" << interactive::RESET
-                  << " Output path [default: output_lanczos.png]: ";
+                  << " Output path [default: " << args.output_path << "]: ";
         std::getline(std::cin, input);
         if (!input.empty())
         {
             args.output_path = input;
+            args.output_path = format_processing::ensure_extension(args.output_path, args.format_ext);
         }
 
         // ── 4. Verbose Mode ──
