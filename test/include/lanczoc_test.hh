@@ -1,8 +1,8 @@
 // test/include/lanczos_test.hh
-#ifndef __LANCZOS_TEST_HH
-#define __LANCZOS_TEST_HH
+#ifndef LANCZOS_TEST_HH
+#define LANCZOS_TEST_HH
 
-#include "image_enchace/lanczoc.hh"
+#include "image_enhance/lanczos.hh"
 #include "utils/utils.hh"
 #include <iostream>
 #include <cassert>
@@ -13,7 +13,7 @@
 namespace lanczos_test
 {
 
-    // ✅ Helper: Print pixel value
+    //  Helper: Print pixel value
     void print_pixel(const std::string &label, const Pixel &p)
     {
         std::cout << label << " R=" << std::setw(3) << +p.r
@@ -21,14 +21,14 @@ namespace lanczos_test
                   << " B=" << std::setw(3) << +p.b << std::endl;
     }
 
-    // ✅ Helper: Print image info
+    //  Helper: Print image info
     void print_image_info(const std::string &label, const Image &img)
     {
         std::cout << label << ": " << img.width << "x" << img.height
                   << " (" << img.data.size() << " pixels)" << std::endl;
     }
 
-    // ✅ Helper: Print sample pixels dari image
+    // Helper: Print sample pixels dari image
     void print_sample_pixels(const Image &img, const std::string &label = "Image")
     {
         std::cout << "\n--- " << label << " Sample Pixels ---" << std::endl;
@@ -72,7 +72,7 @@ namespace lanczos_test
         print_image_info("Source", src);
         print_sample_pixels(src, "Source");
 
-        Image dst = resizeLanczos(src, 2.0f);
+        Image dst = lanczos::resize(src, 2.0f);
 
         print_image_info("Destination", dst);
         print_sample_pixels(dst, "Destination");
@@ -106,7 +106,7 @@ namespace lanczos_test
         print_image_info("Source", src);
         print_sample_pixels(src, "Source");
 
-        Image dst = resizeLanczos(src, 0.5f);
+        Image dst = lanczos::resize(src, 0.5f);
 
         print_image_info("Destination", dst);
         print_sample_pixels(dst, "Destination");
@@ -136,7 +136,7 @@ namespace lanczos_test
         print_image_info("Source", src);
         print_sample_pixels(src, "Source");
 
-        Image dst = resizeLanczos(src, 1.0f);
+        Image dst = lanczos::resize(src, 1.0f);
 
         print_image_info("Destination", dst);
         print_sample_pixels(dst, "Destination");
@@ -177,7 +177,7 @@ namespace lanczos_test
         print_image_info("Source", src);
         print_sample_pixels(src, "Source");
 
-        Image dst = resizeLanczos(src, 2.0f);
+        Image dst = lanczos::resize(src, 2.0f);
 
         print_image_info("Destination", dst);
         print_sample_pixels(dst, "Destination");
@@ -207,7 +207,7 @@ namespace lanczos_test
         print_image_info("Source", src);
         print_sample_pixels(src, "Source");
 
-        Image dst = resizeLanczos(src, 2.0f);
+        Image dst = lanczos::resize(src, 2.0f);
 
         print_image_info("Destination", dst);
         print_sample_pixels(dst, "Destination");

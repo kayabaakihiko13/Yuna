@@ -1,7 +1,5 @@
-#ifndef __CLI_HH
-#define __CLI_HH
-
-#pragma once
+#ifndef CLI_HH
+#define CLI_HH
 
 #include <string>
 #include <iostream>
@@ -24,7 +22,7 @@ namespace cli
 
     inline bool is_valid_scale(float scale)
     {
-        for (int i = 0; i < LANCZOS_RADIUS; ++i)
+        for (size_t i = 0; i < SCALES_COUNT; ++i)
         {
             if (std::abs(SCALES[i] - scale) < 0.0001f)
                 return true;
@@ -35,10 +33,10 @@ namespace cli
     inline std::string get_scale_options()
     {
         std::ostringstream oss;
-        for (int i = 0; i < LANCZOS_RADIUS; ++i)
+        for (size_t i = 0; i < SCALES_COUNT; ++i)
         {
             oss << SCALES[i];
-            if (i < LANCZOS_RADIUS - 1)
+            if (i < SCALES_COUNT - 1)
                 oss << ", ";
         }
         return oss.str();

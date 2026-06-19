@@ -24,3 +24,15 @@ add_executable(main ${MAIN_SRC})
 
 # base folder include
 target_include_directories(main PRIVATE src/include)
+
+# test target
+option(BUILD_TESTS "Build test executable" OFF)
+if(BUILD_TESTS)
+    add_executable(tests
+        test/main_tests.cc
+    )
+    target_include_directories(tests PRIVATE
+        src/include
+        test/include
+    )
+endif()

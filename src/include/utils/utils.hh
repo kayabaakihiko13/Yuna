@@ -1,40 +1,48 @@
-#ifndef __UTILS_HH
-#define __UTILS_HH
+#ifndef UTILS_HH
+#define UTILS_HH
+
 #include "constants.hh"
 #include <vector>
-#include <filesystem>
-#define _USE_MATH_DEFINES
-#include <numbers>
+#include <cstdint>
+#include <algorithm>
+#include <cmath>
 
-#include "utils/constants.hh"
-// utilities for define image and Pixel data type
+namespace image_utils
+{
 
 struct Pixel
 {
     uint8_t r, g, b;
 };
+
 struct Image
 {
     int width;
     int height;
     std::vector<Pixel> data;
 
-    // by passing
     Pixel &at(int x, int y)
     {
         return data[y * width + x];
     }
+
     const Pixel &at(int x, int y) const
     {
         return data[y * width + x];
     }
 };
 
-float sinc(float x)
+inline float sinc(float x)
 {
-    if (x == 0.0)
-        return 1.0;
-    return std::sin(M_PI * x) / (M_PI * x);
+    if (x == 0.0f)
+        return 1.0f;
+    float pix = static_cast<float>(PI) * x;
+    return std::sin(pix) / pix;
 }
+
+} // namespace image_utils
+
+using image_utils::Pixel;
+using image_utils::Image;
 
 #endif
