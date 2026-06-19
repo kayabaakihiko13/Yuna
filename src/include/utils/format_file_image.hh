@@ -16,19 +16,19 @@ namespace format_processing
     };
     inline ImageFormat detect_format(const std::string &path)
     {
-        std::string lower = path;
-        std::transform(lower.begin(), lower.end(), lower.begin(),
-                       [](unsigned char c)
-                       { return std::tolower(c); });
-
-        if (lower.find(".png") != std::string::npos)
-            return ImageFormat::PNG;
-        if (lower.find(".jpg") != std::string::npos ||
-            lower.find(".jpeg") != std::string::npos)
-            return ImageFormat::JPG;
-        if (lower.find(".bmp") != std::string::npos)
-            return ImageFormat::BMP;
-
+        // ambil ektraksi dari path
+        size_t dot_idx  = path.find_last_of(".");
+        if(dot_idx == std::string::npos) return ImageFormat::UNKNOWN;
+        std::string ext = path.substr(dot_idx+1);
+        // Ubah ke lowercase agar aman
+        for (char &c : ext) {
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        }
+        
+        if (ext == "png") return ImageFormat::PNG;
+        if (ext == "jpg" || ext == "jpeg") return ImageFormat::JPG;
+        if (ext == "bmp") return ImageFormat::BMP;
+        
         return ImageFormat::UNKNOWN;
     }
 

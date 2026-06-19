@@ -3,7 +3,7 @@
 #include <chrono>
 #include <vector>
 #include <cmath>
-#include <functional> // ← Untuk std::function
+#include <functional>
 
 // STB Image
 #if defined(__GNUC__) || defined(__clang__)
@@ -42,10 +42,17 @@ bool process_image()
     format_processing::ImageFormat output_fmt = format_processing::detect_format(args.output_path);
     if (output_fmt == format_processing::ImageFormat::UNKNOWN)
     {
-        // Default ke PNG jika ekstensi tidak jelas
-        interactive::log_warn("Ekstensi output tidak dikenali, menggunakan .png");
-        args.output_path = format_processing::ensure_extension(args.output_path, format_processing::ImageFormat::PNG);
-        output_fmt = format_processing::ImageFormat::PNG;
+        std::string lower_path = args.output_path;
+        for(char &c:lower_path) c = std::tolower(static_cast<unsigned char>(c));
+        if(lower_path.find(".jpg")!= std::string::npos || lower_path.find(".jpeg") != std::string::npos){
+            output_fmt = format_processing::ImageFormat::JPG;
+        }else if(lower_path.find(".bmp") != std::string::npos){
+            output_fmt = format_processing::ImageFormat::BMP;
+        }else{
+            interactive::log_warn("Ekstensi output tidak dikenali, menggunakan format pilihan");
+            output_fmt = args.format_ext;
+            args.output_path = format_processing::ensure_extension(args.output_path, output_fmt);
+        }
     }
     // show up info conversion
     format_processing::print_conversion_info(args.input_path, args.output_path);
@@ -92,7 +99,7 @@ bool process_image()
     auto t2 = std::chrono::high_resolution_clock::now();
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
     interactive::log_success("Done: " + std::to_string(result.width) + "x" + std::to_string(result.height) + " px");
-    std::cout << "⏱️  Time: " << ms << " ms\n\n";
+    std::cout << "Time: " << ms << " ms\n\n";
 
     // saving and print output
     std::vector<unsigned char> out(result.width * result.height * 3);
