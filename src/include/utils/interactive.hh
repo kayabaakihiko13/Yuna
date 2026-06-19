@@ -1,10 +1,8 @@
-#ifndef __UTILS_INTERACTIVE_HH
-#define __UTILS_INTERACTIVE_HH
+#ifndef INTERACTIVE_HH
+#define INTERACTIVE_HH
 #include <iostream>
 #include <string>
 #include <functional>
-// pragma once
-#pragma once
 
 namespace interactive
 {
@@ -60,13 +58,13 @@ namespace interactive
     inline void log_warn(const std::string &msg)
     {
         std::string info_symbol = "[!]";
-        std::cout << GREEN << info_symbol << RESET << msg << "\n";
+        std::cout << YELLOW << info_symbol << RESET << msg << "\n";
     }
     inline void log_error(const std::string &msg)
     {
-        std::string infoSymbol = "[✗] ";
-        std::cerr << RED << infoSymbol << RESET << msg << "\n";
+        std::string info_symbol = "[✗] ";
+        std::cerr << RED << info_symbol << RESET << msg << "\n";
     }
-} // namespace interative
+}
 
 #endif

@@ -1,32 +1,26 @@
-#ifndef __LANCZOC_HH
-#define __LANCZOC_HH
+#ifndef LANCZOS_HH
+#define LANCZOS_HH
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <algorithm>
+#include <functional>
 
 #include "utils/constants.hh"
 #include "utils/utils.hh"
 
-// implement kernel lanczoc
-float lanczos(float x, int a)
+using ProgressCallback = std::function<void(int, int)>;
+
+namespace lanczos
+{
+
+inline float kernel(float x, int a)
 {
     if (x < -a || x > a)
         return 0.0f;
-    return sinc(x) * sinc(x / a);
+    return image_utils::sinc(x) * image_utils::sinc(x / a);
 }
 
-// bounding image with camp value
-int clamp(int val, int min_val, int max_val)
-{
-    return std::max(min_val, std::min(max_val, val));
-}
-
-// Di lanczoc.hh, tambahkan:
-#include <functional>
-using ProgressCallback = std::function<void(int, int)>;
-
-Image resizeLanczos(const Image &src, float scale_factor, ProgressCallback cb = nullptr)
+inline Image resize(const Image &src, float scale_factor, ProgressCallback cb = nullptr)
 {
     int dst_width = static_cast<int>(std::round(src.width * scale_factor));
     int dst_height = static_cast<int>(std::round(src.height * scale_factor));
@@ -46,11 +40,11 @@ Image resizeLanczos(const Image &src, float scale_factor, ProgressCallback cb = 
     {
         for (int x = 0; x < dst_width; ++x)
         {
-            float src_x = (x + 0.5) * x_ratio - 0.5;
-            float src_y = (y + 0.5) * y_ratio - 0.5;
+            float src_x = (x + 0.5f) * x_ratio - 0.5f;
+            float src_y = (y + 0.5f) * y_ratio - 0.5f;
 
             float r_val = 0.0f, g_val = 0.0f, b_val = 0.0f;
-            float weight_sum = 0.0;
+            double weight_sum = 0.0;
 
             int x_start = static_cast<int>(std::floor(src_x)) - LANCZOS_RADIUS + 1;
             int x_end = static_cast<int>(std::ceil(src_x)) + LANCZOS_RADIUS;
@@ -61,14 +55,14 @@ Image resizeLanczos(const Image &src, float scale_factor, ProgressCallback cb = 
             {
                 for (int kx = x_start; kx <= x_end; ++kx)
                 {
-                    float wx = lanczos(static_cast<float>(kx) - src_x, LANCZOS_RADIUS);
-                    float wy = lanczos(static_cast<float>(ky) - src_y, LANCZOS_RADIUS);
+                    float wx = kernel(static_cast<float>(kx) - src_x, LANCZOS_RADIUS);
+                    float wy = kernel(static_cast<float>(ky) - src_y, LANCZOS_RADIUS);
                     float weight = wx * wy;
 
                     if (weight > 0.0f)
                     {
-                        int cx = clamp(kx, 0, src.width - 1);
-                        int cy = clamp(ky, 0, src.height - 1);
+                        int cx = std::clamp(kx, 0, src.width - 1);
+                        int cy = std::clamp(ky, 0, src.height - 1);
 
                         const Pixel &p = src.at(cx, cy);
 
@@ -80,9 +74,9 @@ Image resizeLanczos(const Image &src, float scale_factor, ProgressCallback cb = 
                 }
             }
 
-            if (weight_sum > 0.0f)
+            if (weight_sum > 0.0)
             {
-                float inv_sum = 1.0f / weight_sum;
+                float inv_sum = 1.0f / static_cast<float>(weight_sum);
                 dst.at(x, y).r = static_cast<uint8_t>(std::round(r_val * inv_sum));
                 dst.at(x, y).g = static_cast<uint8_t>(std::round(g_val * inv_sum));
                 dst.at(x, y).b = static_cast<uint8_t>(std::round(b_val * inv_sum));
@@ -91,6 +85,7 @@ Image resizeLanczos(const Image &src, float scale_factor, ProgressCallback cb = 
             {
                 dst.at(x, y) = {0, 0, 0};
             }
+
             processed++;
             if (cb && processed % (total / 100 + 1) == 0)
             {
@@ -98,6 +93,10 @@ Image resizeLanczos(const Image &src, float scale_factor, ProgressCallback cb = 
             }
         }
     }
+
     return dst;
 }
-#endif // __LANCZOS_HH
+
+} // namespace lanczos
+
+#endif

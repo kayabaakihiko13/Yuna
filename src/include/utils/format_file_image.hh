@@ -1,7 +1,6 @@
-#ifndef __UTILS_FORMAT_FILE_IMAGE_HH
-#define __UTILS_FORMAT_FILE_IMAGE_HH
+#ifndef FORMAT_FILE_IMAGE_HH
+#define FORMAT_FILE_IMAGE_HH
 
-#pragma once
 #include <string>
 #include <algorithm>
 #include "utils/interactive.hh"
