@@ -1,9 +1,17 @@
 # Build outputs
 dist/
+build/
 *.o
 *.exe
 *.out
+*.jpeg
+*.jpg
+*.png
+*.bmp
 
 # OS files
 .DS_Store
 Thumbs.db
+
+# docs
+docs/*
