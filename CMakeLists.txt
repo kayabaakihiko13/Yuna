@@ -20,7 +20,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   "${CMAKE_SOURCE_DIR}/dist/app")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/dist/app")
 
 # target utama
-add_executable(main ${MAIN_SRC})
+add_executable(main ${MAIN_SRC} src/resources.rc)
 
 # base folder include
 target_include_directories(main PRIVATE src/include)

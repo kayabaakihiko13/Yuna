@@ -52,7 +52,7 @@ namespace cli
         // Header
         std::cout << "\n"
                   << interactive::BOLD << interactive::CYAN
-                  << "Lanczos Image Upscaler" << interactive::RESET << "\n";
+                  << "Yuna Image Enchance" << interactive::RESET << "\n";
         std::cout << std::string(50, '=') << "\n\n";
 
         // ── 1. Input Path (FIX: tambah continue!) ──
