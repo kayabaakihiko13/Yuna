@@ -6,6 +6,7 @@
 #ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
+#include "resource.hh"
 #endif
 
 // STB Image
@@ -24,6 +25,7 @@
 #include "utils/constants.hh"
 #include "utils/interactive.hh"
 #include "utils/format_file_image.hh"
+
 #include "gui/cli.hh"
 
 static Image load_image(const std::string &path, int &w, int &h)
@@ -156,8 +158,12 @@ int main()
 #ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
 #endif
+#ifdef _WIN32
+    SendMessage(GetConsoleWindow(), WM_SETICON, ICON_BIG,
+        (LPARAM)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(YunaIcon)));
+#endif
     std::cout << interactive::CYAN << interactive::BOLD
-              << "\n Welcome to Lanczos Upscaler!"
+              << "\n Welcome To Yuna Image Enchance Program!"
               << interactive::RESET << std::endl
               << std::endl;
     while (true)
