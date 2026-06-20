@@ -87,12 +87,15 @@ inline Image resize(const Image &src, float scale_factor, ProgressCallback cb = 
             }
 
             processed++;
-            if (cb && processed % (total / 100 + 1) == 0)
+            if (cb && (processed % (total / 100 + 1) == 0 || processed == total))
             {
                 cb(processed, total);
             }
         }
     }
+
+    // Pastikan progress mencapai 100%
+    if (cb) cb(total, total);
 
     return dst;
 }
