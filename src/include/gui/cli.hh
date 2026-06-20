@@ -15,9 +15,11 @@ namespace cli
         float scale_factor = 2.0f;
         bool verbose = false;
         bool is_valid = false;
+        bool pde_enchance = false;
         std::string input_path;
         std::string output_path = "output_lanczos.png";
         format_processing::ImageFormat format_ext = format_processing::ImageFormat::PNG; //default png
+        
     };
 
     inline bool is_valid_scale(float scale)
@@ -138,7 +140,14 @@ namespace cli
         std::getline(std::cin, input);
         args.verbose = (input == "y" || input == "Y" || input == "yes");
 
-        // ── 5. Summary & Confirm ──
+        // ── 5. PDE Enhancement ──
+        std::cout << "\n"
+                  << interactive::BLUE << " Apply PDE post-processing (anti-ringing + sharpen)? [y/N]: "
+                  << interactive::RESET;
+        std::getline(std::cin, input);
+        args.pde_enchance = (input == "y" || input == "Y" || input == "yes");
+
+        // ── 6. Summary & Confirm ──
         std::cout << "\n"
                   << interactive::BOLD << "Configuration Summary:" << interactive::RESET << "\n";
         std::cout << "   * Input:  " << interactive::GREEN << args.input_path << interactive::RESET << "\n";
@@ -146,6 +155,8 @@ namespace cli
         std::cout << "   * Output: " << interactive::GREEN << args.output_path << interactive::RESET << "\n";
         if (args.verbose)
             std::cout << "   * Mode:   " << interactive::GREEN << "Verbose" << interactive::RESET << "\n";
+        if (args.pde_enchance)
+            std::cout << "   * PDE:    " << interactive::GREEN << "Enabled" << interactive::RESET << "\n";
 
         std::cout << "\n"
                   << interactive::BOLD << ">" << interactive::RESET

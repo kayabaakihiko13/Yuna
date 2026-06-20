@@ -3,6 +3,10 @@
 #include <chrono>
 #include <vector>
 #include <cmath>
+#ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
 
 // STB Image
 #if defined(__GNUC__) || defined(__clang__)
@@ -16,6 +20,7 @@
 
 // Local headers
 #include "image_enhance/lanczos.hh"
+#include "image_enhance/pde_super_resolution.hh"
 #include "utils/constants.hh"
 #include "utils/interactive.hh"
 #include "utils/format_file_image.hh"
@@ -113,15 +118,21 @@ bool process_image()
         std::cout << "    " << src.width << "*" << src.height << "px\n" << std::endl;
     }
 
-    interactive::log_info("Processing Lanczos Upscale ...");
     auto t1 = std::chrono::high_resolution_clock::now();
 
+    interactive::log_info("Processing Lanczos Upscale ...");
     Image result = lanczos::resize(src, args.scale_factor,
                                    [verbose = args.verbose](int done, int total)
                                    {
                                        if (verbose)
                                            interactive::show_progress(done, total, "Resampling");
                                    });
+
+    if (args.pde_enchance)
+    {
+        interactive::log_info("Applying PDE post-processing (Diffusion + Shock Filter)...");
+        result = PDE_SR::enhance(result);
+    }
 
     auto t2 = std::chrono::high_resolution_clock::now();
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -142,6 +153,9 @@ bool process_image()
 
 int main()
 {
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+#endif
     std::cout << interactive::CYAN << interactive::BOLD
               << "\n Welcome to Lanczos Upscaler!"
               << interactive::RESET << std::endl
