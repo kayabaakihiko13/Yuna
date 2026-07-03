@@ -35,4 +35,12 @@ if(BUILD_TESTS)
         src/include
         test/include
     )
+
+    add_executable(psnr_eval
+        test/psnr_evaluator.cc
+    )
+    target_include_directories(psnr_eval PRIVATE
+        src/include
+        test/include
+    )
 endif()
