@@ -14,20 +14,36 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic -O2)
 endif()
 
-set(MAIN_SRC src/main.cc)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   "${CMAKE_SOURCE_DIR}/dist/app")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/dist/app")
 
 # target utama
-add_executable(main ${MAIN_SRC} src/resources.rc)
+set(MAIN_SOURCES
+    src/main.cc
+    src/resources.rc
+)
+add_executable(Yuna WIN32 ${MAIN_SOURCES})
+# Include path
+target_include_directories(Yuna PRIVATE
+    src
+    src/include
+)
 
-# base folder include
-target_include_directories(main PRIVATE src/include)
+# Library Windows yang diperlukan
+target_link_libraries(Yuna PRIVATE
+    comdlg32
+    comctl32
+)
 
-# test target
+
+
+
+# Testing session
 option(BUILD_TESTS "Build test executable" OFF)
+
 if(BUILD_TESTS)
+    # Test unit utama
     add_executable(tests
         test/main_tests.cc
     )
@@ -36,6 +52,7 @@ if(BUILD_TESTS)
         test/include
     )
 
+    # Evaluator PSNR
     add_executable(psnr_eval
         test/psnr_evaluator.cc
     )
