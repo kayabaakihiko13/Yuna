@@ -1,4 +1,4 @@
-name: C++ CMake CI
+name: C++ CMake CI/CD
 
 on:
   push:
@@ -8,55 +8,51 @@ on:
     branches: [main, development]
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake clang
-      - name: Build
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release
-          cmake --build build
-      - name: Upload Linux Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: lanczos-linux
-          path: build/dist/app/main
-
   build-windows:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        config: [Release]   # atau [Debug, Release]
     steps:
       - uses: actions/checkout@v4
+
+      - name: Cache build
+        uses: actions/cache@v3
+        with:
+          path: build
+          key: ${{ runner.os }}-${{ matrix.config }}-${{ hashFiles('CMakeLists.txt') }}
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+
       - name: Build
-        run: |
-          cmake -B build
-          cmake --build build --config Release
-      - name: Upload Windows Artifact
+        run: cmake --build build --config ${{ matrix.config }}
+
+      - name: Run tests
+        run: ctest --test-dir build -C ${{ matrix.config }} --output-on-failure
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lanczos-windows
-          path: build/dist/app/Release/main.exe
+          name: lanczos-windows-${{ matrix.config }}
+          path: build/Release/main.exe   # sesuaikan dengan path sebenarnya
 
   release:
-    needs: [build-linux, build-windows]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     steps:
-      - name: Download All Artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-      - name: Create Release
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            artifacts/lanczos-windows/main.exe
-            artifacts/lanczos-linux/main
+          files: artifacts/**/*.exe
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
