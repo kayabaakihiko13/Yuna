@@ -1,6 +1,7 @@
 #define NOMINMAX
 #include <windows.h>
-#include <CommCtrl.h>
+#include <commctrl.h>
+#include <stdexcept>
 
 #pragma comment(lib,"comctl32.lib")
 
@@ -15,9 +16,6 @@
 #include "resource.hh"
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
-    INITCOMMONCONTROLSEX icc{ sizeof(icc), ICC_PROGRESS_CLASS };
-    ::InitCommonControlsEx(&icc);
-
     try {
         yuna::gui::Window window(hInstance, nCmdShow);
         return window.Run();

@@ -18,12 +18,11 @@ namespace image_utils
 struct Pixel
 {
     uint8_t r, g, b;
-    // menambahkan akses channel pada gambar
     uint8_t& operator[](int i) {
-        return (i == 0) ? r : (i == 1) ? g : b;
+        return (&r)[std::clamp(i, 0, 2)];
     }
     const uint8_t& operator[](int i) const {
-        return (i == 0) ? r : (i == 1) ? g : b;
+        return (&r)[std::clamp(i, 0, 2)];
     }
 };
 
@@ -43,8 +42,7 @@ struct Image
         return data[y * width + x];
     }
 
-    // adding helper for clamp koordinat
-    const Pixel& at_clamped(int x,int y) const{
+    const Pixel& at_clamped(int x, int y) const {
         x = std::max(0, std::min(width - 1, x));
         y = std::max(0, std::min(height - 1, y));
         return data[y * width + x];
