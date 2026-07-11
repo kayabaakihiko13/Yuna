@@ -74,12 +74,13 @@ private:
     }
 
     void Create() {
-        // Desired CLIENT AREA size (area kontennya saja, bukan termasuk title bar)
+        // Ukuran CLIENT AREA yang diinginkan (area konten saja, tanpa title bar/border)
         RECT rect = {0, 0, 480, 275};
 
         DWORD style = (WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX);
 
-        // Hitung ukuran window total (termasuk title bar & border) 
+        // Hitung ukuran window total (termasuk title bar & border)
+        // supaya client area-nya PERSIS sesuai rect di atas -> tidak ada sisa spasi kosong
         ::AdjustWindowRectEx(&rect, style, FALSE, 0);
 
         int width  = rect.right  - rect.left;
