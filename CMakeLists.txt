@@ -23,7 +23,8 @@ set(MAIN_SOURCES
     src/main.cc
     src/resources.rc
 )
-add_executable(Yuna WIN32 ${MAIN_SOURCES})
+add_executable(Yuna WIN32 ${MAIN_SOURCES} src/app.manifest)
+target_compile_definitions(Yuna PRIVATE UNICODE _UNICODE)
 # Include path
 target_include_directories(Yuna PRIVATE
     src
@@ -34,8 +35,8 @@ target_include_directories(Yuna PRIVATE
 target_link_libraries(Yuna PRIVATE
     comdlg32
     comctl32
+    uxtheme
 )
-
 
 
 

@@ -59,7 +59,7 @@ inline Image resize(const Image &src, float scale_factor, ProgressCallback cb = 
                     float wy = kernel(static_cast<float>(ky) - src_y, LANCZOS_RADIUS);
                     float weight = wx * wy;
 
-                    if (weight > 0.0f)
+                    if (weight != 0.0f)
                     {
                         int cx = std::clamp(kx, 0, src.width - 1);
                         int cy = std::clamp(ky, 0, src.height - 1);
@@ -74,12 +74,12 @@ inline Image resize(const Image &src, float scale_factor, ProgressCallback cb = 
                 }
             }
 
-            if (weight_sum > 0.0)
+            if (std::abs(weight_sum) > 1e-6f)
             {
                 float inv_sum = 1.0f / static_cast<float>(weight_sum);
-                dst.at(x, y).r = static_cast<uint8_t>(std::round(r_val * inv_sum));
-                dst.at(x, y).g = static_cast<uint8_t>(std::round(g_val * inv_sum));
-                dst.at(x, y).b = static_cast<uint8_t>(std::round(b_val * inv_sum));
+                dst.at(x, y).r = static_cast<uint8_t>(std::clamp(std::round(r_val * inv_sum), 0.0f, 255.0f));
+                dst.at(x, y).g = static_cast<uint8_t>(std::clamp(std::round(g_val * inv_sum), 0.0f, 255.0f));
+                dst.at(x, y).b = static_cast<uint8_t>(std::clamp(std::round(b_val * inv_sum), 0.0f, 255.0f));
             }
             else
             {

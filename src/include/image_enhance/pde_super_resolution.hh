@@ -75,8 +75,8 @@ namespace PDE_SR
                     u_next[idx] = u[idx] + dt * divergence;
                     }
                 }
-                u.swap(u_next);  // u = u_next (copy-free swap)
             }
+            u.swap(u_next);
     }
     inline Image anisotropic_diffusion(const Image& input,
                                     float K = 30.0f,
