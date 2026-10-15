@@ -1,41 +1,48 @@
-name: C++ CMake CI/CD
+name: Yuna Pipeline
 
 on:
   push:
-    branches: [main, development]
+    branches: [main, development, "fix/*", "feat/*"]
     tags: ['v*']
   pull_request:
     branches: [main, development]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-windows:
     runs-on: windows-latest
     strategy:
+      fail-fast: false
       matrix:
-        config: [Release]   # atau [Debug, Release]
+        config: [Release]
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache build
-        uses: actions/cache@v3
-        with:
-          path: build
-          key: ${{ runner.os }}-${{ matrix.config }}-${{ hashFiles('CMakeLists.txt') }}
-
-      - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+      - name: Configure
+        run: >
+          cmake -B build
+          -DBUILD_TESTS=ON
+          -DYUNA_BUILD_NUMBER=${{ github.run_number }}
 
       - name: Build
-        run: cmake --build build --config ${{ matrix.config }}
+        run: cmake --build build --config ${{ matrix.config }} --parallel
 
       - name: Run tests
-        run: ctest --test-dir build -C ${{ matrix.config }} --output-on-failure
+        run: build\${{ matrix.config }}\tests.exe
+        shell: cmd
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lanczos-windows-${{ matrix.config }}
-          path: build/Release/main.exe   # sesuaikan dengan path sebenarnya
+          name: yuna-windows-${{ matrix.config }}
+          path: |
+            build/${{ matrix.config }}/Yuna.exe
+            build/${{ matrix.config }}/*.dll
+          if-no-files-found: error
 
   release:
     needs: [build-windows]
@@ -44,15 +51,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
         with:
           files: artifacts/**/*.exe
           generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}

@@ -1,64 +1,63 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.16)
 
-project(Yuna LANGUAGES CXX)
+project(Yuna VERSION 1.0.0 LANGUAGES CXX)
 
-# set constants untuk configurasi C++
+set(PROJECT_VERSION_SUFFIX "alpha")
+if(NOT DEFINED YUNA_BUILD_NUMBER)
+    set(YUNA_BUILD_NUMBER "0")
+endif()
+set(PROJECT_VERSION_FULL
+    "${PROJECT_VERSION}-${PROJECT_VERSION_SUFFIX}.${YUNA_BUILD_NUMBER}")
+message(STATUS "Building ${PROJECT_NAME} v${PROJECT_VERSION_FULL}")
+
+if(NOT WIN32)
+    message(FATAL_ERROR "Yuna saat ini hanya untuk Windows")
+endif()
+
+# ---- Standar C++ ----
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# flag compiler
-if(MSVC)
-    add_compile_options(/W4)
-else()
-    add_compile_options(-Wall -Wextra -Wpedantic -O2)
+# ---- CRT static ----
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+# ---- Default build type (single-config generator) ----
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
 endif()
 
+# ---- Helper warnings ----
+function(yuna_set_warnings tgt)
+    if(MSVC)
+        target_compile_options(${tgt} PRIVATE /W4 /permissive- /wd4996)
+    else()
+        target_compile_options(${tgt} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+endfunction()
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   "${CMAKE_SOURCE_DIR}/dist/app")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/dist/app")
-
-# target utama
-set(MAIN_SOURCES
+# ---- Target utama ----
+add_executable(Yuna WIN32
     src/main.cc
     src/resources.rc
+    src/app.manifest
 )
-add_executable(Yuna WIN32 ${MAIN_SOURCES} src/app.manifest)
 target_compile_definitions(Yuna PRIVATE UNICODE _UNICODE)
-# Include path
-target_include_directories(Yuna PRIVATE
-    src
-    src/include
-)
+target_include_directories(Yuna PRIVATE src src/include)
+target_link_libraries(Yuna PRIVATE comdlg32 comctl32 uxtheme)
+yuna_set_warnings(Yuna)
 
-# Library Windows yang diperlukan
-target_link_libraries(Yuna PRIVATE
-    comdlg32
-    comctl32
-    uxtheme
-)
+# (tidak ada RUNTIME_OUTPUT_DIRECTORY — pakai default CMake)
 
-
-
-# Testing session
-option(BUILD_TESTS "Build test executable" OFF)
+# ---- Test tools (manual) ----
+option(BUILD_TESTS "Build test executables" OFF)
 
 if(BUILD_TESTS)
-    # Test unit utama
-    add_executable(tests
-        test/main_tests.cc
-    )
-    target_include_directories(tests PRIVATE
-        src/include
-        test/include
-    )
+    add_executable(tests test/main_tests.cc)
+    target_include_directories(tests PRIVATE src src/include test/include)
+    yuna_set_warnings(tests)
 
-    # Evaluator PSNR
-    add_executable(psnr_eval
-        test/psnr_evaluator.cc
-    )
-    target_include_directories(psnr_eval PRIVATE
-        src/include
-        test/include
-    )
+    add_executable(psnr_eval test/psnr_evaluator.cc)
+    target_include_directories(psnr_eval PRIVATE src src/include test/include)
+    yuna_set_warnings(psnr_eval)
 endif()
