@@ -44,7 +44,7 @@ add_executable(Yuna WIN32
 )
 target_compile_definitions(Yuna PRIVATE UNICODE _UNICODE)
 target_include_directories(Yuna PRIVATE src src/include)
-target_link_libraries(Yuna PRIVATE comdlg32 comctl32 uxtheme)
+target_link_libraries(Yuna PRIVATE comdlg32 comctl32 uxtheme dwmapi gdi32 ole32)
 yuna_set_warnings(Yuna)
 
 # (tidak ada RUNTIME_OUTPUT_DIRECTORY — pakai default CMake)
